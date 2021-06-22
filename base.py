@@ -55,7 +55,7 @@ class Operator:
             return "No Name"
         else:
             return self._name
-    def pass(func):
+    def Pass(func):
         def ConnectAndStore(self:Operator,x,*args):
             if (not isinstance(x, Tensor_)) or (x.before() is None):
                 x=Input()(x)
@@ -68,7 +68,7 @@ class Operator:
             return x
         return ConnectAndStore
     def End(func):
-        def ConnectAndStore（self:Operator,x,*args):
+        def ConnectAndStore(self:Operator,x,*args):
             if (not isinstance(x,Tensor_)) or (x.before() is None):
                 x=Input()(x)
             if self._tracing:
