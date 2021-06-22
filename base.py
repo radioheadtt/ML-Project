@@ -7,6 +7,7 @@ Created on Tue Jun 22 13:23:37 2021
 
 from torch import Tensor
 import numpy as np
+import torch
 class Tensor_(Tensor):
     def __init__ (self,*args,**kwargs):
         super(Tensor_,self).__init__()
@@ -33,7 +34,7 @@ class Tensor_(Tensor):
         self._required=True
     def ask_grad(self):
         return self._required
-    def __repr__():
+    def __repr__(self):
         hints=super(Tensor_,self).__repr__()
         hints="reconstructed tensor"+hints[6:]
         return hints
@@ -107,7 +108,7 @@ class Input(Operator):
         super(Input,self).__init__()
         self.name="Input"
     def __call__(self,x):
-        if not isinstance(\x, Tensor_):
+        if not isinstance(x, Tensor_):
             x=Tensor_(x).float()
         x.store(self)
         self._out_x=x
@@ -124,7 +125,7 @@ class Gather_last(Operator):
         self.where=torch.Tensor(where.float()).long()
         self.index=torch.Tensor(np.arrange(len(where))).long()
     
-    @Operator.pass
+    @Operator.Pass
     def __call__(self,x):
         return Tensor_(x[self.index,self.where].unsqueeze(-1))
     def backward(self,grad,show=False):
@@ -132,7 +133,7 @@ class Gather_last(Operator):
             print("->",self.__repr__())
         before_x=self._father.getOutput()
         indice_grad=zeros_like(before_x)
-        indice_grad[self.index,self,where]=grad.squeeze()
+        indice_grad[self.index,self.where]=grad.squeeze()
         self._father.backward(indice_grad,show=show)
 
 class View(Operator):
@@ -140,7 +141,7 @@ class View(Operator):
         super(View,self).__init__()
         self._name=f"View({shape})"
         self.to_shape=shape
-    @Operator.pass
+    @Operator.Pass
     def __call__(self,x):
         x=x.reshape(self.to_shape)
         return Tensor_(x)
@@ -157,7 +158,7 @@ class Sum(Operator):
         
     @Operator.End
     def __call__(self,x):
-        return Tensor_(torch.sum(x),unsqueeze(-1))
+        return Tensor_(torch.sum(x).unsqueeze(-1))
     def backward(self,grad=1,show=False):
         if show:
             print("->",self.__repr__())
