@@ -15,19 +15,19 @@ class Tensor_(Tensor):
         self._is_leaf=False
         self._required=False
     def is_leaf(self):
-        return self._is_leaf()
+        return self._is_leaf
     def end(self):
         self._is_leaf=True
     def before(self):
         return self._last_node
     def store(self,node):
-        assert isinstance(self,Operator)
+        assert isinstance(node,Operator)
         self._last_node=node
     def backward(self,show=False):
         if self._is_leaf:
             if show:
                 print("Backpropogation:")
-            self._last_node_.backward(show=show)
+            self._last_node.backward(show=show)
         else:
             raise TypeError("Not a leaf")
     def requires_grad_(self):
@@ -38,15 +38,26 @@ class Tensor_(Tensor):
         hints=super(Tensor_,self).__repr__()
         hints="reconstructed tensor"+hints[6:]
         return hints
-
+    def base_Gather(self, index):
+        gather_node = Gather_last(index)
+        return gather_node(self)
+    
+    def base_View(self, *shape):
+        view = View(*shape)
+        return view(self)
+    
+    def base_Sum(self):
+        summ = Sum()
+        return summ(self)
+    
 class Operator:
     def __init__(self):
-        self.name :str =None
+        self._name :str =None
         self._father: Operator =None
         self._son:Operator=None
         self._out_x:Operator=None
         self._tracing:bool=True
-    def __cal__(self):
+    def __call__(self):
         raise NotImplementedError
     def _init_weight(self):
         for para in self.parameters():
@@ -116,7 +127,7 @@ class Input(Operator):
     def backward(self,grad,show=False):
         if show:
             print("->",self.__repr__())
-        if self._out_x.askgrad():
+        if self._out_x.ask_grad():
             self.out_x.grad=grad
 class Gather_last(Operator):
     def __init__(self,where):
