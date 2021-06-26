@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Jun 22 13:23:37 2021
 
-@author: Radiohead
-"""
 
 from torch import Tensor
 import numpy as np
@@ -134,7 +129,7 @@ class Gather_last(Operator):
         super(Gather_last,self).__init__()
         self._name="Gather()"
         self.where=torch.Tensor(where.float()).long()
-        self.index=torch.Tensor(np.arrange(len(where))).long()
+        self.index=torch.Tensor(np.arange(len(where))).long()
     
     @Operator.Pass
     def __call__(self,x):

@@ -1,4 +1,4 @@
-from .base import Tensor_
+from base import Tensor_
 
 class tensor_(Tensor_):
     """

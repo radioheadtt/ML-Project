@@ -6,8 +6,8 @@ import torch
 import pickle
 import numpy as np
 import torch.nn.functional as F
-from .tensor_ import tensor_
-from .base import zeros_like, ones_like
+from tensor_ import tensor_
+from base import zeros_like, ones_like
 
 def load(name):
     with open(name, 'rb') as f:

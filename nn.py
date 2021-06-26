@@ -5,10 +5,10 @@
 import torch
 import numpy as np
 from copy import deepcopy
-from .utils import generate_grad, refine_para, ones_like, zeros_like
-from .tensor_ import tensor_
-from . import init
-from .base import Operator, Input
+from utils import generate_grad, refine_para, ones_like, zeros_like
+from tensor_ import tensor_
+import init
+from base import Operator, Input
 # import .init
 import torch.nn.functional as F
         
@@ -54,7 +54,7 @@ class Linear(Operator):
             x = before_x[batch_i]
             b_grad += grad_i
             W_grad += grad_i.unsqueeze(-1)*(x.repeat(self.out_shape, 1))
-        # print(b_grad.size(), W_grad.size())
+        #print(b_grad.size(), W_grad.size())
         self.weight.grad = W_grad.float()
         self.bias.grad   = b_grad.float()
         next_grad = torch.matmul(grad, self.weight)
@@ -104,7 +104,39 @@ class Gather_last(Operator):
         indice_grad[self.index, self.where] = grad.squeeze()
         return indice_grad
 
+class MaxPool2d(Operator):
+    def __init__(self, kernel_size=(2, 2), stride=2):
+        super(MyMaxPool2D, self).__init__()
+        self.stride = stride
+        self.kernel_size = kernel_size
+        self.w_height = kernel_size[0]
+        self.w_width = kernel_size[1]
 
+    @Operator.Pass
+    def __call__(self, x):
+        in_height = x.size(0)
+        in_width = x.size(1)
+
+        out_height = int((in_height - self.w_height) / self.stride) + 1
+        out_width = int((in_width - self.w_width) / self.stride) + 1
+
+        out = torch.zeros((out_height, out_width))
+
+        for i in range(out_height):
+            for j in range(out_width):
+                start_i = i * self.stride
+                start_j = j * self.stride
+                end_i = start_i + self.w_height
+                end_j = start_j + self.w_width
+                out[i, j] = torch.max(x[start_i: end_i, start_j: end_j])
+        return out
+    @Operator.Back
+    def backward(self,grad,show=False):
+        if show:
+            print("->",self.__repr__())
+        before_x=self._father.getOutput()
+        
+        
 class Conv2d(Operator):
     """
         simply conv2d
