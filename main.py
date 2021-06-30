@@ -9,7 +9,9 @@ import torch.optim as optim
 from torch.optim import Optimizer
 import math
 import nn
+import utils
 from optim import Adam
+from torch import tensor
 
 class CNN(nn.Model):
     def __init__(self):
@@ -73,13 +75,16 @@ device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 for epoch in range(5):
     running_loss=0.0
     for i,data in enumerate(train_loader,0):
+        print(i)
         inputs,labels=data[0],data[1]
         optimizer.zero_grad()
-        outputs=net.forward(inputs)
-        loss=criterion(outputs,labels)
+        inputs=inputs.reshape((inputs.shape[0],28*28))
+        outputs=net(inputs)
+        labels_=tensor(utils.to_one_hot(labels)).float()
+        loss=criterion(outputs,labels_)
         loss.backward()
+        print(loss)
         optimizer.step()
-        
         running_loss+=loss.item()
         if i%100 == 99:
             print('[%d,%5d] loss: %.3f'%(epoch+1,i+1,running_loss/100))

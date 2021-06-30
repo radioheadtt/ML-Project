@@ -101,3 +101,9 @@ def prGreen(skk): print("\033[92m{}\033[00m".format(skk))
 
 
 def prYellow(skk): print("\033[93m{}\033[00m".format(skk))
+
+def to_one_hot(labels, dimension=10):
+    results = np.zeros((len(labels), dimension))
+    for i, label in enumerate(labels):
+        results[i, label] = 1.
+    return results

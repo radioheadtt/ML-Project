@@ -115,7 +115,7 @@ class Input(Operator):
         self.name="Input"
     def __call__(self,x):
         if not isinstance(x, Tensor_):
-            x=Tensor_(x).float()
+            x=Tensor_(Tensor_(x).float())
         x.store(self)
         self._out_x=x
         return x

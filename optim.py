@@ -33,7 +33,6 @@ class Adam:
         for group in self.param_groups:
             for p in group['params']:
                 if p.grad is not None:
-                    p.grad.detach_()
                     p.grad.zero_()
     def add_param_group(self,param_group):
         params=param_group['params']
@@ -71,8 +70,8 @@ class Adam:
                 state=self.state[p]
                 if len(state)==0:
                     state['step']=0
-                    state['exp_avg']=zeros_like(p.data,memory_format=torch.preserve_format)
-                    state['exp_avg_sq']=zeros_like(p.data,memory_format=torch.preserve_format)
+                    state['exp_avg']=zeros_like(p.data)
+                    state['exp_avg_sq']=zeros_like(p.data)
                 state['step']+=1
                 beta1,beta2=group['betas']
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
