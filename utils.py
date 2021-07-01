@@ -94,16 +94,44 @@ def arange(length):
     """
     return torch.Tensor(np.arange(length)).int()
 
-def prRed(skk): print("\033[91m{}\033[00m".format(skk))
+def iterate_regions_1d(image, kernel, stride):
 
-
-def prGreen(skk): print("\033[92m{}\033[00m".format(skk))
-
-
-def prYellow(skk): print("\033[93m{}\033[00m".format(skk))
+    h=image.shape[-2]
+    for i in range(0, h - kernel + 1, stride):
+        if (i+kernel > h):
+            continue
+        yield image[...,:,i:i+kernel], i//stride
+def generate_grad_1d(imgs, filters, bias, kernel, stride,filter_grad, bias_grad, grad):
+    f_num = filters.shape[0]
+    batch = grad.shape[0]
+    next_grad = zeros_like(imgs)
+    for batch_i in range(batch):
+        image = imgs[batch_i]
+        grad_i = grad[batch_i]
+        for (region, i) in iterate_regions(image, kernel, stride):
+            for f in range(f_num):
+                try:
+                    filter_grad[f] += grad_i[f, i]*region
+                    bias_grad[f] += grad_i[f,i]
+                    next_grad[batch_i,:, i:i+kernel] += grad_i[f,i]*filters[f]
+                except:
+                    print('----------------------')
+                    print(filters.shape, bias_grad.shape)
+                    print(image.shape, region.shape, grad_i.shape)
+                    print(kernel, stride)
+                    print(i)
+                    raise IndexError                    
+    return next_grad
 
 def to_one_hot(labels, dimension=10):
     results = np.zeros((len(labels), dimension))
     for i, label in enumerate(labels):
         results[i, label] = 1.
     return results
+def softmax(x):
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum(axis=0)
+
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
