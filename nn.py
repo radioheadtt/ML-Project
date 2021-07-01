@@ -182,11 +182,12 @@ class Conv1d(Operator):
         self.kernel=kernel_size
         self._name = f"Conv1d {in_channel} -> {filters}"
         self.stride=stride
-        self.filters = torch.randn((
+        self.filters = torch.zeros((
             self.out_channel,
             self.in_channel,
             self.kernel
         ))
+        init.kaiming_uniform_(self.filters)
         self.weight = self.filters # align name
         self.bias = torch.zeros(
             self.out_channel

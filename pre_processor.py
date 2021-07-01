@@ -14,7 +14,7 @@ import torch
 import nltk
 import torch.nn.functional as F
 
-stop_words = ["i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours", "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its", "itself", "they", "them", "their", "theirs", "themselves", "what", "which", "who", "whom", "this", "that", "these", "those", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "a", "an", "the", "and", "but", "if", "or", "because", "as", "until", "while", "of", "at", "by", "for", "with", "about", "against", "between", "into", "through", "during", "before", "after", "above", "below", "to", "from", "up", "down", "in", "out", "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now","ve"]     
+stop_words = ["i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours", "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its", "itself", "they", "them", "their", "theirs", "themselves", "what", "which", "who", "whom", "this", "that", "these", "those", "am", "is", "are", "was", "were", "be", "been", "being", "ve", "have", "has", "had", "having", "do", "does", "did", "doing", "a", "an", "the", "and", "but", "if", "or", "because", "as", "until", "while", "of", "at", "by", "for", "with", "about", "against", "between", "into", "through", "during", "before", "after", "above", "below", "to", "from", "up", "down", "in", "out", "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now"]     
 
 
 class Vocab:
@@ -88,9 +88,11 @@ def data_clean():
     
 def tokenize(df):   #返回一个列表，其中元素是分词化的各条评价
     comments=[]        
-    for line in df['CommentsContent']:
+    for line in df['CommentsContent']:        
         words=line.split(' ')
         words = [word for word in words if(len(str(word))!=0) and word not in stop_words]
+        if len(words) < 12:
+            words=words+['<unk>']*(12-len(words))
         comments.append(words)    
     return comments    #e.g.,[['very','good'],['not','bad']]
 
@@ -99,7 +101,9 @@ def tokenize_star(df):   #返回一个列表，其中元素是分词化的各条
     comments_with_stars=[]
     for row in df.iterrows():
         temp=[]
-        temp.append([i for i in row['CommentsContent'].split(' ') if(len(str(i))!=0 and i not in stop_words)])
+        temp.append([i for i in row['CommentsContent'].split(' ') if(len(str(i))!=0 and i not in stop_words)][:12])
+        if len(temp) < 12:
+            temp=temp+['<unk>']*(12-len(temp))
         temp.append(row['CommentsStars'])
         comments_with_stars.append(temp)
     return comments_with_stars     #e.g.,[[['very','good'],5],[['not','bad'],3]]
@@ -113,26 +117,29 @@ def load_corpus(df,max_tokens=-1):     #整合
         corpus=corpus[:max_tokens]
     return corpus,vocab
 
-def to_one_hot(vocab,max_index=-1):      #将单词映射为one-hot编码
-    token_to_one_hot=vocab.idx_to_token
-    if max_index > 0:
-        length=max_index
-    else:
-        length=len(token_to_one_hot)
-    for key in token_to_one_hot.keys():
-        value=np.zeros(length)
-        np.put(value,token_to_one_hot[key],1)
-        token_to_one_hot[key]=torch.Tensor(value)
-    return token_to_one_hot    #a dict
 
-def comment_to_vec(lis,dic):   #the list is comments_with_stars and the dict is token_to_one_hot
-    vec_with_star=[]
+def comment_to_idx(lis,dic):   #the list is comments_with_stars and the dict is token_to_index
+    tens_with_5, tens_with_4, tens_with_3, tens_with_2, tens_with_1 = [], [], [], [], []
     for line in lis:
         temp=[dic[word] for word in line[0] if word in dic]    
         temp=torch.tensor(temp)
-        vec_with_star.append([temp,line[1]])
-    return vec_with_star
+        if line[1]==1:
+            tens_with_1.append([temp,line[1]])   
+        elif line[1]==2:
+            tens_with_2.append([temp,line[1]])
+        elif line[1]==3:
+            tens_with_3.append([temp,line[1]])
+        elif line[1]==4:
+            tens_with_4.append([temp,line[1]])
+        elif line[1]==5:
+            tens_with_5.append([temp,line[1]])
+    return tens_with_5, tens_with_4, tens_with_3, tens_with_2, tens_with_1
 
 if __name__ == '__main__':
     df=data_clean()
     corpus,vocab=load_corpus(df)
+    comments_with_stars=tokenize_star(df)
+    token_to_index=vocab.token_to_index
+    tens_with_5, tens_with_4, tens_with_3, tens_with_2, tens_with_1=comment_to_idx(comments_with_stars,token_to_index)
+    
+    
