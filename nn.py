@@ -13,6 +13,7 @@ from base import Operator, Input
 import torch.nn.functional as F
 from base import Tensor_
 from torch import Tensor
+from optim import Adam
 class Linear(Operator):
     def __init__(self, in_shape, out_shape):
         super(Linear, self).__init__()
@@ -152,6 +153,7 @@ class Conv2d(Operator):
         return tensor_(x)
     @Operator.Back
     def backward(self, grad, show=False):
+        
         try:
             assert grad.shape == self._out_x.shape
         except AssertionError:
@@ -180,7 +182,7 @@ class Conv1d(Operator):
         self.kernel=kernel_size
         self._name = f"Conv1d {in_channel} -> {filters}"
         self.stride=stride
-        self.filters = torch.zeros((
+        self.filters = torch.randn((
             self.out_channel,
             self.in_channel,
             self.kernel
@@ -194,7 +196,7 @@ class Conv1d(Operator):
         pass
     
     def parameters(self):
-        for para in [self.filters, self.bias]:
+        for para in [self.filters]:
             yield para
     
     @Operator.Pass
@@ -212,6 +214,8 @@ class Conv1d(Operator):
             assert grad.shape == self._out_x.shape
         except AssertionError:
             raise AssertionError(f"expected grad({self._out_x.shape}), got grad({grad.shape})")
+        if show:
+            print("↘︎", self.__repr__())
         input = self._father.getOutput()
         filter_grad = zeros_like(self.filters)
         bias_grad = zeros_like(self.bias)
@@ -233,10 +237,12 @@ class MaxPooling1d(Operator):
         pool_w = x.shape[2] // self.width
         for i in range(0, input.shape[2] - self.width + 1, self.width):
             M = input[:, :, i : i + self.width]
-            output[:,:,i // self.width] = M.max()
-        return output
+            output[:,:,i // self.width] = M.max(dim=2)   
+        return Tensor_(output.values)
     @Operator.Back
-    def backward(self,grad):
+    def backward(self,grad,show=False):
+        if show:
+            print("↘︎", self.__repr__())
         input = self._father.getOutput()
         next_grad=Tensor.zeros(input.shape)
         for m in range(input.shape[0]):
@@ -245,7 +251,30 @@ class MaxPooling1d(Operator):
                     M = (input[m, n, i : i + self.width]).max()
                     for j in range(self.width):
                         if input[m][n][i+j]==M:
-                            next_grad[m][n][i]+=1
+                            next_grad[m][n][i+j]+=1
+        return next_grad
+class GlobalMaxPooling1d(Operator):
+    def __init__(self):
+        super(GlobalMaxPooling1d,self).__init__()
+    @Operator.Pass
+    def __call__(self,x):
+        output = np.zeros(x.shape[0:2])
+        M = x[:, :, :]
+        output = M.max(dim=2)
+        return Tensor_(output.values)
+    @Operator.Back
+    def backward(self,grad,show=False):
+        if show:
+            print("↘︎", self.__repr__())
+        input = self._father.getOutput()
+        next_grad=torch.zeros(input.shape)
+        for m in range(input.shape[0]):
+            for n in range(input.shape[1]):
+                M = (input[m, n, :]).max()
+                for j in range(input.shape[2]):
+                    if input[m][n][j]==M:
+                        next_grad[m][n][j]+=1
+        return next_grad
 class MSE(Operator):
     def __init__(self):
         super(MSE, self).__init__()
@@ -270,14 +299,6 @@ class MSE(Operator):
         return next_grad
 
 
-# class HuberLoss(Operator):
-#     def __init__(self):
-#         super(HuberLoss, self).__init__()
-#         self._name = "HuberLoss"
-        
-#     @Operator.End
-#     def __call__(self, input, target):
-#         pass
     
 class Sum(Operator):
     def __init__(self):
@@ -381,9 +402,31 @@ class Sequential(Model):
     
 if __name__ == "__main__":
     print("store operators and models")
-    a=Conv1d(3,16,3)
-    x=Tensor_([[[1,2,3],[4,5,6],[7,8,9],[10,11,12],[13,14,15],[16,17,18]]])
+    x=Tensor_([[[1,2,3,9,1],[4,5,6,11,2],[7,8,9,5,3],[10,11,12,1,0],[13,14,15,31,7],[16,17,18,9,91]]])
     x=Tensor_(x.permute(0,2,1))
-    y=a(x)
+    input=x
+    y=Tensor_([[0,0,1]])
+    class CNN(Model):
+        def __init__(self):
+            self.fc = Sequential(Conv1d(5,32,3),ReLU(),GlobalMaxPooling1d(),Linear(32,3))
+            super(CNN, self).__init__()
+            self.set_name('Net')
+            
+        def construct(self):
+            return [self.fc]
     
+        def forward(self, obs):
+            actions = self.fc(obs)
+            return actions
+    net=CNN()
+    criterion=MSE()
+    optimizer=Adam(net.parameters())
+    for i in range(500):
+        print(i)
+        optimizer.zero_grad()
+        outputs=net(input)
+        loss=criterion(outputs,y)
+        loss.backward()
+        print(loss)
+        optimizer.step()
     

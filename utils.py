@@ -108,7 +108,7 @@ def generate_grad_1d(imgs, filters, bias, kernel, stride,filter_grad, bias_grad,
     for batch_i in range(batch):
         image = imgs[batch_i]
         grad_i = grad[batch_i]
-        for (region, i) in iterate_regions(image, kernel, stride):
+        for (region, i) in iterate_regions_1d(image, kernel, stride):
             for f in range(f_num):
                 try:
                     filter_grad[f] += grad_i[f, i]*region

@@ -19,7 +19,7 @@ corpus,vocab=load_corpus(df)
 
 class CNN(nn.Model):
     def __init__(self):
-        self.fc = nn.Sequential(nn.conv1(100,32,3),nn.Linear(,),nn.ReLU(),nn.Linear(98, 1024),nn.ReLU(),nn.Linear(1024,512),nn.ReLU(),nn.Linear(512,10))
+        self.fc = nn.Sequential(nn.conv1(100,32,3),nn.ReLU(),nn.MaxPooling1d(2),nn.Conv1d(32,64,3),nn.ReLU(),nn.GlobalMaxPooling1d(),nn.Linear(64,128),nn.ReLU(),nn.Linear(128,5))
         super(CNN, self).__init__()
         self.set_name('Net')
 
@@ -32,14 +32,11 @@ class CNN(nn.Model):
 net=CNN()
 criterion=nn.MSE()
 optimizer=Adam(net.parameters())
-net=CNN()
-criterion=nn.MSE()
-optimizer=Adam(net.parameters())
 
 train_accs=[]
 train_loss=[]
 test_accs=[]
-device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+#device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 #training
 for epoch in range(5):
     running_loss=0.0
