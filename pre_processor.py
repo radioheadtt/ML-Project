@@ -14,6 +14,9 @@ import torch
 import nltk
 import torch.nn.functional as F
 
+stop_words = ["i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours", "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its", "itself", "they", "them", "their", "theirs", "themselves", "what", "which", "who", "whom", "this", "that", "these", "those", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "a", "an", "the", "and", "but", "if", "or", "because", "as", "until", "while", "of", "at", "by", "for", "with", "about", "against", "between", "into", "through", "during", "before", "after", "above", "below", "to", "from", "up", "down", "in", "out", "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now","ve"]     
+
+
 class Vocab:
     """token is word, ukn is unkown, """
     def __init__(self,tokens=None,min_freq=0,reserved_tokens=None):
@@ -59,11 +62,10 @@ def count_corpus(tokens):   #统计token的频率
     return collections.Counter(tokens)
 
 def data_clean():
-    path=r'C:\Users\孙亚非\Desktop\Learning\machine learning\train_data_all'
-    path_w=r'C:\Users\孙亚非\Desktop\Learning\machine learning\cleaned_data'
+    path=r'.\train_data_all'
+    path_w=r'.\cleaned_data'
     file_dir = os.listdir(path)
     oneletter='[^a-zA-Z]'
-    stop_words = ["i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours", "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its", "itself", "they", "them", "their", "theirs", "themselves", "what", "which", "who", "whom", "this", "that", "these", "those", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "a", "an", "the", "and", "but", "if", "or", "because", "as", "until", "while", "of", "at", "by", "for", "with", "about", "against", "between", "into", "through", "during", "before", "after", "above", "below", "to", "from", "up", "down", "in", "out", "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now"]     
     contents=[]  #此列表中元素为一条条评价
     df_final = pd.DataFrame(columns=['CommentsStars', 'CommentsContent'])
     for file in file_dir:
@@ -72,8 +74,7 @@ def data_clean():
             cleaned_file_name=os.path.join(path_w,file)
             raw_data=pd.read_csv(file_name,encoding= 'utf-8').dropna()
             stars=raw_data['CommentsStars'].tolist()            
-            content=list(map(lambda x:re.sub(oneletter," ",x).lower(),raw_data['CommentsContent'].astype(str).tolist()))
-            content=[i for i in content if not i in stop_words]     #去停词            
+            content=list(map(lambda x:re.sub(oneletter," ",x).lower(),raw_data['CommentsContent'].astype(str).tolist()))                 
             contents.append(content)
             dic_data={'CommentsStars':stars,'CommentsContent':content}
             data=pd.DataFrame(dic_data)
@@ -89,7 +90,7 @@ def tokenize(df):   #返回一个列表，其中元素是分词化的各条评�
     comments=[]        
     for line in df['CommentsContent']:
         words=line.split(' ')
-        words = [word for word in words if(len(str(word))!=0)]
+        words = [word for word in words if(len(str(word))!=0) and word not in stop_words]
         comments.append(words)    
     return comments    #e.g.,[['very','good'],['not','bad']]
 
@@ -98,7 +99,7 @@ def tokenize_star(df):   #返回一个列表，其中元素是分词化的各条
     comments_with_stars=[]
     for row in df.iterrows():
         temp=[]
-        temp.append([i for i in row['CommentsContent'].split(' ') if(len(str(i))!=0)])
+        temp.append([i for i in row['CommentsContent'].split(' ') if(len(str(i))!=0 and i not in stop_words)])
         temp.append(row['CommentsStars'])
         comments_with_stars.append(temp)
     return comments_with_stars     #e.g.,[[['very','good'],5],[['not','bad'],3]]
@@ -135,11 +136,3 @@ def comment_to_vec(lis,dic):   #the list is comments_with_stars and the dict is 
 if __name__ == '__main__':
     df=data_clean()
     corpus,vocab=load_corpus(df)
-    dic={}
-    lis=tokenize(df)
-    for i in lis:
-        key=str(len(i))
-        if key not in dic:
-            dic[key]=1
-        elif key in dic:
-            dic[key]+=1
