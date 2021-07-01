@@ -170,8 +170,7 @@ class Sum(Operator):
             print("->",self.__repr__())
         before_x=self._father.getOutput()
         sum_grad=ones_like(before_x)*grad
-        self._father.backward(sum_grad,show=show)
-        
+        self._father.backward(sum_grad,show=show)         
 def ones_like(tensor:Tensor_):
     dtype=tensor.dtype
     shape=tensor.shape

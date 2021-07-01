@@ -15,7 +15,7 @@ from torch import tensor
 
 class CNN(nn.Model):
     def __init__(self):
-        self.fc = nn.Sequential(nn.Linear(28*28,64*7*7),nn.Linear(64*7*7, 1024),nn.Linear(1024,512),nn.Linear(512,10))
+        self.fc = nn.Sequential(nn.Linear(28*28,64*7*7),nn.ReLU(),nn.Linear(64*7*7, 1024),nn.ReLU(),nn.Linear(1024,512),nn.ReLU(),nn.Linear(512,10))
         super(CNN, self).__init__()
         self.set_name('DQN')
 
@@ -101,11 +101,11 @@ train_iters = range(len(train_accs))
 draw_train_process('training',train_iters,train_loss,train_accs,'training loss','training acc')
 
 PATH='./mnist_net.pth'
-torch.save(net.state_dict(),PATH)
+torch.save(net.seq_dict(),PATH)
 correct=0
 total=0
 test_net=CNN()
-test_net.load_state_dict(torch.load(PATH))
+test_net.load_seq_dict(torch.load(PATH))
 #test
 with torch.no_grad():
     for data in test_loader:
