@@ -65,7 +65,6 @@ def data_clean():
     path_w=r'C:\Users\孙亚非\Desktop\Learning\machine learning\cleaned_data'
     file_dir = os.listdir(path)
     oneletter='[^a-zA-Z]'
-    contents=[]  #此列表中元素为一条条评价
     df_final = pd.DataFrame(columns=['CommentsStars', 'CommentsContent'])
     for file in file_dir:
         if not os.path.isdir(file):     #make sure it's a file not a directory
@@ -77,9 +76,8 @@ def data_clean():
             title=list(map(lambda x:re.sub(oneletter," ",x).lower(),raw_data['CommentsTitle'].astype(str).tolist()))
             for i in range(len(title)):
                 ti,con=title[i].strip(' '),content[i].strip(' ')
-                title[i]=[ti+' '+con]                    
-            contents.append(title)
-            dic_data={'CommentsStars':stars,'CommentsContent':content}
+                title[i]=ti+' '+con                    
+            dic_data={'CommentsStars':stars,'CommentsContent':title}
             data=pd.DataFrame(dic_data)
             data.to_csv(cleaned_file_name)
             df_final=pd.concat([df_final,data],ignore_index=True)
