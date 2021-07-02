@@ -83,7 +83,26 @@ def data_clean():
             print('Error: directory found')    
     return df_final     #一个包含所有评价的大df，star的数据类型为int
     
- 
+def test_data_clean():
+    path=r'.\train_data_all'
+    file_dir = os.listdir(path)
+    oneletter='[^a-zA-Z]'
+    contents=[]  #此列表中元素为一条条评价
+    df_test_final = pd.DataFrame(columns=['CommentsStars', 'CommentsContent'])
+    for file in file_dir:
+        if not os.path.isdir(file):     #make sure it's a file not a directory
+            file_name=os.path.join(path,file)
+            raw_data=pd.read_csv(file_name,encoding= 'utf-8').dropna()        
+            content=list(map(lambda x:re.sub(oneletter," ",x).lower(),raw_data['CommentsContent'].astype(str).tolist()))
+            title=list(map(lambda x:re.sub(oneletter," ",x).lower(),raw_data['CommentsTitle'].astype(str).tolist()))       
+            title.extend(content)           
+            contents.append(title)             
+            dic_data={'CommentsContent':content}
+            data=pd.DataFrame(dic_data)
+            df_test_final=pd.concat([df_test_final,data],ignore_index=True)
+        else:
+            print('Error: directory found')    
+    return df_test_final     #一个包含所有评价的大df，star的数据类型为int
     
 def tokenize(df):   #返回一个列表，其中元素是分词化的各条评价
     comments=[]        
@@ -145,12 +164,28 @@ def comment(lis,dic):
         tens.append(temp)
         labels.append(line[1])
     return tens,labels
+def test_comment(lis,dic):
+    tens=[]
+    labels=[]
+    for line in lis:
+        temp=[dic[word] for word in line if word in dic]    
+        tens.append(temp)
+       # labels.append(line[1])
+    return tens,labels
 if __name__ == '__main__':
-    df=data_clean()
-    corpus,vocab=load_corpus(df)
-    comments_with_stars=tokenize_star(df)
-    token_to_index=vocab.token_to_index
-    tens,labels=[],[]
-    tens,labels=comment(comments_with_stars,token_to_index)
+    test_df=test_data_clean()
+    df = data_clean()
     
+    corpus,vocab=load_corpus(df)
+    
+    test_comments=tokenize(test_df)
+    comments_with_stars=tokenize_star(df)
+    
+    token_to_index=vocab.token_to_index
+    
+    tens,labels=[],[]
+    test_tens,test_labels=[],[]
+    
+    tens,labels=comment(comments_with_stars,token_to_index)
+    test_tens,test_labels=test_comment(test_comments,token_to_index)
     
