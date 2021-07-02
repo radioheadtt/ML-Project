@@ -1,5 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jun  8 10:04:19 2021
 
-
+@author: 孙亚非
+"""
 
 import pandas as pd
 import os
@@ -49,7 +53,6 @@ class Vocab:
             return self.idx_to_token[indices]
         return [self.idx_to_token[index] for index in indices]
                 
-
     
 def count_corpus(tokens):   #统计token的频率
     #tokens is a 1D or 2D list
@@ -58,8 +61,8 @@ def count_corpus(tokens):   #统计token的频率
     return collections.Counter(tokens)
 
 def data_clean():
-    path=r'.\train_data_all'
-    path_w=r'.\cleaned_data'
+    path=r'C:\Users\孙亚非\Desktop\Learning\machine learning\train_data_all'
+    path_w=r'C:\Users\孙亚非\Desktop\Learning\machine learning\cleaned_data'
     file_dir = os.listdir(path)
     oneletter='[^a-zA-Z]'
     contents=[]  #此列表中元素为一条条评价
@@ -71,16 +74,17 @@ def data_clean():
             raw_data=pd.read_csv(file_name,encoding= 'utf-8').dropna()
             stars=raw_data['CommentsStars'].tolist()            
             content=list(map(lambda x:re.sub(oneletter," ",x).lower(),raw_data['CommentsContent'].astype(str).tolist()))
-            title=list(map(lambda x:re.sub(oneletter," ",x).lower(),raw_data['CommentsTitle'].astype(str).tolist()))       
-            title.extend(content)           
-            contents.append(title)             
-            
+            title=list(map(lambda x:re.sub(oneletter," ",x).lower(),raw_data['CommentsTitle'].astype(str).tolist()))
+            for i in range(len(title)):
+                ti,con=title[i].strip(' '),content[i].strip(' ')
+                title[i]=[ti+' '+con]                    
+            contents.append(title)
             dic_data={'CommentsStars':stars,'CommentsContent':content}
             data=pd.DataFrame(dic_data)
             data.to_csv(cleaned_file_name)
             df_final=pd.concat([df_final,data],ignore_index=True)
         else:
-            print('Error: directory found')    
+            print('Error: directory found')  
     return df_final     #一个包含所有评价的大df，star的数据类型为int
     
  
@@ -101,13 +105,11 @@ def tokenize_star(df):   #返回一个列表，其中元素是分词化的各条
         list1=list(df.iloc[i])
         words=list1[1].split(' ')
         words=[i for i in words if(len(str(i))!=0 and i not in stop_words)]
-        if len(words) < 16:
-            words=words+['<unk>']*(16-len(words))
+        if len(words) < 21:
+            words=words+['<unk>']*(21-len(words))
         else:
-            words=words[:16]
+            words=words[:21]
         temp.append(words)
-        if type(list1[0])==str:
-            list1[0]=float(list1[0][0:3])
         temp.append(list1[0])
         comments_with_stars.append(temp)
     return comments_with_stars     #e.g.,[[['very','good'],5],[['not','bad'],3]]
@@ -123,34 +125,17 @@ def load_corpus(df,max_tokens=-1):     #整合
 
 
 def comment_to_idx(lis,dic):   #the list is comments_with_stars and the dict is token_to_index
-    tens_with_5, tens_with_4, tens_with_3, tens_with_2, tens_with_1 = [], [], [], [], []
+    tens_with_star = []
     for line in lis:
-        temp=[dic[word] for word in line[0] if word in dic]    
-        if line[1]==1:
-            tens_with_1.append([temp,line[1]])   
-        elif line[1]==2:
-            tens_with_2.append([temp,line[1]])
-        elif line[1]==3:
-            tens_with_3.append([temp,line[1]])
-        elif line[1]==4:
-            tens_with_4.append([temp,line[1]])
-        elif line[1]==5:
-            tens_with_5.append([temp,line[1]])
-    return tens_with_5, tens_with_4, tens_with_3, tens_with_2, tens_with_1      #e.g.,[[Tensor[46,22],5],[Tensor[11,'87],3]]
-def comment(lis,dic):
-    tens=[]
-    labels=[]
-    for line in lis:
-        temp=[dic[word] for word in line[0] if word in dic]    
-        tens.append(temp)
-        labels.append(line[1])
-    return tens,labels
+        temp=[dic[word] if (word in dic and dic[word]>1) else dic['<unk>'] for word in line[0]]  
+        temp=torch.tensor(temp)
+        tens_with_star.append([temp,line[1]])
+    return tens_with_star      #e.g.,[[Tensor[46,22],5],[Tensor[11,87],3]]
+
 if __name__ == '__main__':
     df=data_clean()
     corpus,vocab=load_corpus(df)
     comments_with_stars=tokenize_star(df)
     token_to_index=vocab.token_to_index
-    tens,labels=[],[]
-    tens,labels=comment(comments_with_stars,token_to_index)
-    
+    tens_with_star=comment_to_idx(comments_with_stars,token_to_index)
     
