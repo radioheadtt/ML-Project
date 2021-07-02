@@ -311,7 +311,7 @@ class CrossEntropy(Operator):
             loss=0
             x=torch.log(x)
             for i in range(x.shape[0]):
-                loss-=torch.matmul(x[0],another[0])
+                loss-=torch.matmul(x[i],another[i])
             loss=loss/x.shape[0]
             return loss
         prob=F.softmax(x,dim=1)

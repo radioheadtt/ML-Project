@@ -44,8 +44,7 @@ test_labels=labels[50000:]
 #****************************************************************************************
 class CNN(nn.Model):
     def __init__(self):
-        self.fc = nn.Sequential(nn.Conv1d(100,128,5),nn.ReLU(),nn.MaxPooling1d(2),nn.Conv1d(128,256,3),nn.ReLU(),
-                                nn.GlobalMaxPooling1d(),nn.Linear(256,64),nn.ReLU(),nn.Linear(64,6))
+        self.fc = nn.Sequential(nn.Conv1d(100,256,5),nn.ReLU(),nn.MaxPooling1d(2),nn.Conv1d(256,256,3),nn.ReLU(),nn.GlobalMaxPooling1d(),nn.Linear(256,64),nn.ReLU(),nn.Linear(64,6))
         super(CNN, self).__init__()
         self.set_name('Net')
 
@@ -60,8 +59,8 @@ def draw_train_process(title,iters,loss,F_1,loss_l,F_1_l):
     plt.title(title, fontsize=24)
     plt.xlabel("iter", fontsize=20)
     plt.ylabel("F_score(\%)", fontsize=20)
-    plt.plot(iters, loss,color='red',label=loss_l) 
-    plt.plot(iters, F_1,color='green',label=F_1_l) 
+    plt.plot(iters, loss,color='red',label=loss) 
+    plt.plot(iters, F_1,color='green',label=F_1) 
     plt.legend()
     plt.grid()
     plt.show()
@@ -92,6 +91,7 @@ for epoch in range(1):
         loss.backward()
         print("loss:")
         print(loss[0])
+        train_loss.append(loss.item())
         optimizer.step()
         correct=0
         total=0
@@ -106,13 +106,14 @@ for epoch in range(1):
         Macro_F1_score.append(F)
         train_accs.append(100*correct/total)
         running_loss+=loss.item()
-        if i%20 == 19:
-            print('[%d,%5d] training loss: %.3f'%(epoch+1,i+1,running_loss/20))
+        if i%10 == 9:
+            print('[%d,%5d] training loss: %.3f'%(epoch+1,i+1,running_loss/10))
             running_loss=0.0
             test_outputs=net(test_data)
             test_labels_=Tensor(to_one_hot(test_labels)).float().cuda()
             test_loss=criterion(test_outputs,test_labels_)
             print('[%d,%5d] test loss: %.3f'%(epoch+1,i+1,test_loss))
+            test_loss_.append(test_loss)
             _,test_predicted=torch.max(test_outputs.data,1)
             test_total=len(test_labels)
             test_correct=(np.array(test_predicted.cpu())==test_labels).sum().item()
@@ -122,10 +123,8 @@ for epoch in range(1):
             F=Macro_F1(np.array(test_labels),np.array(test_predicted.cpu()))
             print('[%d,%5d] test Macro-F1 Score: %.3f'%(epoch+1,i+1,F))
             test_F1.append(F)
-        train_loss.append(loss.item(****))
-        if i>100:
+        if i>50:
             continue
 draw_train_process("training",range(len(train_loss)),train_loss,Macro_F1_score,"Training loss","Macro-F1 score")
 draw_train_process("training",range(len(test_loss_)),test_loss_,test_F1,"Test loss","Test F1 score")
-
 
