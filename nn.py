@@ -305,9 +305,32 @@ class CrossEntropy(Operator):
     def __init__(self):
         super(CrossEntropy,self).__init__()
         self._name="CrossEntropy"
-    
-
-    
+    @Operator.End
+    def __call__(self,x:tensor_,another):
+        def cross_entropy_compute(x,another):
+            loss=0
+            x=torch.log(x)
+            for i in range(x.shape[0]):
+                loss-=torch.matmul(x[0],another[0])
+            loss=loss/x.shape[0]
+            return loss
+        prob=F.softmax(x,dim=1)
+        out_x=cross_entropy_compute(prob, another)
+        self._another=another
+        return out_x
+    @Operator.Back
+    def backward(self,grad=1.,show=False):
+        if show:
+            print("↘︎", self.__repr__())
+        X=self._father.getOutput()
+        m = self._another.shape[0]
+        next_grad = F.softmax(X,dim=1)
+        print(next_grad)
+        for i in range(m):
+            next_grad[i][self._another[i].nonzero().item()] -= 1.
+        next_grad = next_grad/m
+        #print(next_grad)
+        return next_grad
 class Sum(Operator):
     def __init__(self):
         super(Sum, self).__init__()
@@ -428,7 +451,7 @@ if __name__ == "__main__":
             actions = self.fc(obs)
             return actions
     net=CNN()
-    criterion=MSE()
+    criterion=CrossEntropy()
     optimizer=Adam(net.parameters())
     for i in range(500):
         print(i)

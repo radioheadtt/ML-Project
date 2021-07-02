@@ -146,13 +146,21 @@ def Macro_F1(labels,predicted):
         tp = np.sum((actual==label) & (predicted==label))
         fp = np.sum((actual!=label) & (predicted==label))
         fn = np.sum((predicted!=label) & (actual==label))
-    
-        precision = tp/(tp+fp)
-        recall = tp/(tp+fn)
-        f1 = 2 * (precision * recall) / (precision + recall)
+        if(tp+fp==0):
+            precision=0
+        else:
+            precision = tp/(tp+fp)
+        if(tp+fn==0):
+            recall=0
+        else:
+            recall = tp/(tp+fn)
+        if(precision+recall==0):
+            f1=0
+        else:  
+            f1 = 2 * (precision * recall) / (precision + recall)
         return f1
-    return np.mean([f1(labels, predicted, label) 
-        for label in np.unique(labels)])        
+    lis=[f1(labels, predicted, label) for label in np.unique(labels)]
+    return np.mean(lis)        
         
         
         

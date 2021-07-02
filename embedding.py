@@ -27,7 +27,7 @@ def load_GloVe(vocab):
                 embedding_matrix[i] = embedding_vector
     return embedding_matrix,embeddings_index
 class embedding():
-    def __init__(self,weight,input_dim=12,embedding_dim=100):
+    def __init__(self,weight,input_dim=16,embedding_dim=100):
         self.weight=weight
         self.input_dim=input_dim
         self.embedding_dim=embedding_dim
