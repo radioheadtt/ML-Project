@@ -7,7 +7,7 @@ import pickle
 import numpy as np
 import torch.nn.functional as F
 from tensor_ import tensor_
-from base import zeros_like, ones_like
+from base import zeros_like, ones_like,Tensor_
 
 def load(name):
     with open(name, 'rb') as f:
@@ -58,7 +58,7 @@ def generate_grad(imgs, filters, bias, kernel, stride, padding, filter_grad, bia
     batch = grad.shape[0]
     padding = (padding[1], padding[1], padding[0], padding[0])
     imgs = F.pad(imgs, padding, 'constant', value=0)
-    next_grad = zeros_like(imgs)
+    next_grad = zeros_like(imgs).cuda()
     for batch_i in range(batch):
         image = imgs[batch_i]
         grad_i = grad[batch_i]
@@ -96,7 +96,7 @@ def arange(length):
 
 def iterate_regions_1d(image, kernel, stride):
 
-    h=image.shape[-2]
+    h=image.shape[-1]
     for i in range(0, h - kernel + 1, stride):
         if (i+kernel > h):
             continue
@@ -104,13 +104,14 @@ def iterate_regions_1d(image, kernel, stride):
 def generate_grad_1d(imgs, filters, bias, kernel, stride,filter_grad, bias_grad, grad):
     f_num = filters.shape[0]
     batch = grad.shape[0]
-    next_grad = zeros_like(imgs)
+    next_grad = zeros_like(imgs).cuda()
     for batch_i in range(batch):
         image = imgs[batch_i]
         grad_i = grad[batch_i]
         for (region, i) in iterate_regions_1d(image, kernel, stride):
             for f in range(f_num):
                 try:
+                    #print(region.shape)
                     filter_grad[f] += grad_i[f, i]*region
                     bias_grad[f] += grad_i[f,i]
                     next_grad[batch_i,:, i:i+kernel] += grad_i[f,i]*filters[f]
@@ -123,10 +124,10 @@ def generate_grad_1d(imgs, filters, bias, kernel, stride,filter_grad, bias_grad,
                     raise IndexError                    
     return next_grad
 
-def to_one_hot(labels, dimension=10):
+def to_one_hot(labels, dimension=6):
     results = np.zeros((len(labels), dimension))
     for i, label in enumerate(labels):
-        results[i, label] = 1.
+        results[i,int(label)] = 1.
     return results
 def softmax(x):
     e_x = np.exp(x - np.max(x))
@@ -135,3 +136,30 @@ def softmax(x):
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
+
+def loaders(data,labels,batch_size):
+    for i in range(len(data)//batch_size):
+        yield Tensor_(data[batch_size*i:batch_size*(i+1)].to("cpu")).cuda(),Tensor_(labels[batch_size*i:batch_size*(i+1)]).cuda()
+        
+def Macro_F1(labels,predicted):
+    def f1(actual, predicted, label):
+        tp = np.sum((actual==label) & (predicted==label))
+        fp = np.sum((actual!=label) & (predicted==label))
+        fn = np.sum((predicted!=label) & (actual==label))
+    
+        precision = tp/(tp+fp)
+        recall = tp/(tp+fn)
+        f1 = 2 * (precision * recall) / (precision + recall)
+        return f1
+    return np.mean([f1(labels, predicted, label) 
+        for label in np.unique(labels)])        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        

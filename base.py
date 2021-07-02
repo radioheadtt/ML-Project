@@ -44,7 +44,9 @@ class Tensor_(Tensor):
     def base_Sum(self):
         summ = Sum()
         return summ(self)
-    
+    def cuda_required(self):
+        self._required=False
+        return self
 class Operator:
     def __init__(self):
         self._name :str =None
@@ -115,7 +117,7 @@ class Input(Operator):
         self.name="Input"
     def __call__(self,x):
         if not isinstance(x, Tensor_):
-            x=Tensor_(Tensor_(x).float())
+            x=Tensor_(x.float().to("cpu")).cuda()
         x.store(self)
         self._out_x=x
         return x
