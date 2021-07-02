@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Jun  8 10:04:19 2021
 
-@author: 孙亚非
-"""
+
 
 import pandas as pd
 import os
@@ -74,8 +70,11 @@ def data_clean():
             cleaned_file_name=os.path.join(path_w,file)
             raw_data=pd.read_csv(file_name,encoding= 'utf-8').dropna()
             stars=raw_data['CommentsStars'].tolist()            
-            content=list(map(lambda x:re.sub(oneletter," ",x).lower(),raw_data['CommentsContent'].astype(str).tolist()))                 
-            contents.append(content)
+            content=list(map(lambda x:re.sub(oneletter," ",x).lower(),raw_data['CommentsContent'].astype(str).tolist()))
+            title=list(map(lambda x:re.sub(oneletter," ",x).lower(),raw_data['CommentsTitle'].astype(str).tolist()))       
+            title.extend(content)           
+            contents.append(title)             
+            
             dic_data={'CommentsStars':stars,'CommentsContent':content}
             data=pd.DataFrame(dic_data)
             data.to_csv(cleaned_file_name)
@@ -91,20 +90,25 @@ def tokenize(df):   #返回一个列表，其中元素是分词化的各条评�
     for line in df['CommentsContent']:        
         words=line.split(' ')
         words = [word for word in words if(len(str(word))!=0) and word not in stop_words]
-        if len(words) < 12:
-            words=words+['<unk>']*(12-len(words))
         comments.append(words)    
     return comments    #e.g.,[['very','good'],['not','bad']]
 
 
 def tokenize_star(df):   #返回一个列表，其中元素是分词化的各条评价以及星级
     comments_with_stars=[]
-    for row in df.iterrows():
+    for i in range(len(df)):
         temp=[]
-        temp.append([i for i in row['CommentsContent'].split(' ') if(len(str(i))!=0 and i not in stop_words)][:12])
-        if len(temp) < 12:
-            temp=temp+['<unk>']*(12-len(temp))
-        temp.append(row['CommentsStars'])
+        list1=list(df.iloc[i])
+        words=list1[1].split(' ')
+        words=[i for i in words if(len(str(i))!=0 and i not in stop_words)]
+        if len(words) < 16:
+            words=words+['<unk>']*(16-len(words))
+        else:
+            words=words[:16]
+        temp.append(words)
+        if type(list1[0])==str:
+            list1[0]=float(list1[0][0:3])
+        temp.append(list1[0])
         comments_with_stars.append(temp)
     return comments_with_stars     #e.g.,[[['very','good'],5],[['not','bad'],3]]
 
@@ -122,7 +126,6 @@ def comment_to_idx(lis,dic):   #the list is comments_with_stars and the dict is 
     tens_with_5, tens_with_4, tens_with_3, tens_with_2, tens_with_1 = [], [], [], [], []
     for line in lis:
         temp=[dic[word] for word in line[0] if word in dic]    
-        temp=torch.tensor(temp)
         if line[1]==1:
             tens_with_1.append([temp,line[1]])   
         elif line[1]==2:
@@ -133,13 +136,21 @@ def comment_to_idx(lis,dic):   #the list is comments_with_stars and the dict is 
             tens_with_4.append([temp,line[1]])
         elif line[1]==5:
             tens_with_5.append([temp,line[1]])
-    return tens_with_5, tens_with_4, tens_with_3, tens_with_2, tens_with_1
-
+    return tens_with_5, tens_with_4, tens_with_3, tens_with_2, tens_with_1      #e.g.,[[Tensor[46,22],5],[Tensor[11,'87],3]]
+def comment(lis,dic):
+    tens=[]
+    labels=[]
+    for line in lis:
+        temp=[dic[word] for word in line[0] if word in dic]    
+        tens.append(temp)
+        labels.append(line[1])
+    return tens,labels
 if __name__ == '__main__':
     df=data_clean()
     corpus,vocab=load_corpus(df)
     comments_with_stars=tokenize_star(df)
     token_to_index=vocab.token_to_index
-    tens_with_5, tens_with_4, tens_with_3, tens_with_2, tens_with_1=comment_to_idx(comments_with_stars,token_to_index)
+    tens,labels=[],[]
+    tens,labels=comment(comments_with_stars,token_to_index)
     
     
