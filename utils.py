@@ -58,7 +58,7 @@ def generate_grad(imgs, filters, bias, kernel, stride, padding, filter_grad, bia
     batch = grad.shape[0]
     padding = (padding[1], padding[1], padding[0], padding[0])
     imgs = F.pad(imgs, padding, 'constant', value=0)
-    next_grad = zeros_like(imgs).cuda()
+    next_grad = zeros_like(imgs) 
     for batch_i in range(batch):
         image = imgs[batch_i]
         grad_i = grad[batch_i]
@@ -104,7 +104,7 @@ def iterate_regions_1d(image, kernel, stride):
 def generate_grad_1d(imgs, filters, bias, kernel, stride,filter_grad, bias_grad, grad):
     f_num = filters.shape[0]
     batch = grad.shape[0]
-    next_grad = zeros_like(imgs).cuda()
+    next_grad = zeros_like(imgs) 
     for batch_i in range(batch):
         image = imgs[batch_i]
         grad_i = grad[batch_i]
@@ -139,7 +139,7 @@ def sigmoid(x):
 
 def loaders(data,labels,batch_size):
     for i in range(len(data)//batch_size):
-        yield Tensor_(data[batch_size*i:batch_size*(i+1)].to("cpu")).cuda(),Tensor_(labels[batch_size*i:batch_size*(i+1)]).cuda()
+        yield Tensor_(data[batch_size*i:batch_size*(i+1)]  ) ,Tensor_(labels[batch_size*i:batch_size*(i+1)]) 
         
 def Macro_F1(labels,predicted):
     def f1(actual, predicted, label):

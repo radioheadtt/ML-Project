@@ -7,7 +7,7 @@ import pre_processor
 from pre_processor import data_clean,load_corpus
 from torch import Tensor
 def load_GloVe(vocab):
-    glove_dir = 'C:/Users/Radiohead/Desktop/glove.6B'
+    glove_dir = 'C:/Users/22110/Desktop/glove.6B'
     embeddings_index = {}
     f = open(os.path.join(glove_dir, 'glove.6B.100d.txt'),'rb')
     for line in f:
@@ -33,7 +33,7 @@ class embedding():
         self.embedding_dim=embedding_dim
     def __call__(self,x):
         assert x.shape[1]==self.input_dim
-        vec=torch.zeros((x.shape[0],self.input_dim,self.embedding_dim)).cuda()
+        vec=torch.zeros((x.shape[0],self.input_dim,self.embedding_dim)) 
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
                 if x[i][j]!=0:

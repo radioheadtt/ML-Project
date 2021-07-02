@@ -11,14 +11,14 @@ def uniform_(weight, bounds=None):
     if bounds is None:
         bounds = [0,1]
     shape = tuple(weight.data.shape)
-    weight.data = torch.Tensor(np.random.uniform(*bounds, size=shape)).cuda()
-    return weight.cuda()
+    weight.data = torch.Tensor(np.random.uniform(*bounds, size=shape)) 
+    return weight 
     
 def normal_(weight, loc=None,std = None):
     loc = 0. if loc is None else loc
     std = 1. if std is None else std
     
-    weight.data = torch.Tensor(np.random.normal(loc=loc, scale=std)).cuda()
+    weight.data = torch.Tensor(np.random.normal(loc=loc, scale=std)) 
     return weight.to('cuda')
     
 def kaiming_uniform_(weight, k=None, a = None):

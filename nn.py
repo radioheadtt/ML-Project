@@ -21,8 +21,8 @@ class Linear(Operator):
         self.in_shape = in_shape
         self.out_shape = out_shape        
         
-        self.weight = torch.ones(out_shape, in_shape).cuda()
-        self.bias   = torch.ones(out_shape).cuda()
+        self.weight = torch.ones(out_shape, in_shape) 
+        self.bias   = torch.ones(out_shape) 
         self._init_weight()
         
         
@@ -130,11 +130,11 @@ class Conv2d(Operator):
             self.in_channel,
             self.kernel[0],
             self.kernel[1]
-        )).cuda()
+        )) 
         self.weight = self.filters # align name
         self.bias = torch.zeros(
             self.out_channel
-        ).cuda()
+        ) 
         
     def _init_weight(self):
         pass
@@ -186,13 +186,13 @@ class Conv1d(Operator):
             self.out_channel,
             self.in_channel,
             self.kernel
-        )).cuda()
+        )) 
         init.kaiming_uniform_(self.filters)
 
         self.weight = self.filters # align name
         self.bias = torch.zeros(
             self.out_channel
-        ).cuda()
+        ) 
         init.kaiming_uniform_(self.bias)
         
     def _init_weight(self):
@@ -209,7 +209,7 @@ class Conv1d(Operator):
         except AssertionError:
             raise AssertionError(f"expected 3-dim tensor, got {x.shape}")
         print(type(self.filters))
-        x = F.conv1d(x,self.filters, bias=self.bias, stride=self.stride).cuda()
+        x = F.conv1d(x,self.filters, bias=self.bias, stride=self.stride) 
         return x
     
     @Operator.Back
@@ -221,8 +221,8 @@ class Conv1d(Operator):
         if show:
             print("↘︎", self.__repr__())
         input = self._father.getOutput()
-        filter_grad = zeros_like(self.filters).cuda()
-        bias_grad = zeros_like(self.bias).cuda()
+        filter_grad = zeros_like(self.filters) 
+        bias_grad = zeros_like(self.bias) 
         next_grad = generate_grad_1d(input, 
                                   self.filters, self.bias, self.kernel, self.stride,
                                   filter_grad, bias_grad, grad)
@@ -237,18 +237,18 @@ class MaxPooling1d(Operator):
         self.width=width
     @Operator.Pass
     def __call__(self,x):
-        output = torch.zeros((x.shape[0],x.shape[1],x.shape[2]//self.width)).cuda()
+        output = torch.zeros((x.shape[0],x.shape[1],x.shape[2]//self.width)) 
         pool_w = x.shape[2] // self.width
         for i in range(0, x.shape[2] - self.width + 1, self.width):
             M = x[:, :, i : i + self.width]
             output[:,:,i // self.width] = M.max(dim=2).values 
-        return Tensor_(output.to('cpu')).cuda()
+        return Tensor_(output  ) 
     @Operator.Back
     def backward(self,grad,show=False):
         if show:
             print("↘︎", self.__repr__())
         input = self._father.getOutput()
-        next_grad=torch.zeros(input.shape).cuda()
+        next_grad=torch.zeros(input.shape) 
         for m in range(input.shape[0]):
             for n in range(input.shape[1]):
                 for i in range(0, input.shape[2] - self.width + 1, self.width):
@@ -262,7 +262,7 @@ class GlobalMaxPooling1d(Operator):
         super(GlobalMaxPooling1d,self).__init__()
     @Operator.Pass
     def __call__(self,x):
-        output = torch.zeros(x.shape[0:2]).cuda()
+        output = torch.zeros(x.shape[0:2]) 
         M = x[:, :, :]
         output = M.max(dim=2)
         return output.values
@@ -434,10 +434,10 @@ class Sequential(Model):
 if __name__ == "__main__":
     print("store operators and models")
     x=Tensor_([[[1,2,3,9,1],[4,5,6,11,2],[7,8,9,5,3],[10,11,12,1,0],[13,14,15,31,7],[16,17,18,9,91]]])
-    x=Tensor_(x.permute(0,2,1)).cuda()
+    x=Tensor_(x.permute(0,2,1)) 
     x=x.cuda_required()
     input=x
-    y=Tensor_([[0,0,1]]).cuda()
+    y=Tensor_([[0,0,1]]) 
     class CNN(Model):
         def __init__(self):
             self.fc = Sequential(Conv1d(5,32,3),ReLU(),GlobalMaxPooling1d(),Linear(32,3))

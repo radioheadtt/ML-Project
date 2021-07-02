@@ -84,7 +84,7 @@ for epoch in range(1):
         inputs.cuda_required()
         optimizer.zero_grad()
         outputs=net(inputs)
-        labels_=Tensor(to_one_hot(labels)).float().cuda()
+        labels_=Tensor(to_one_hot(labels)).float() 
         loss=criterion(outputs,labels_)
         loss.backward()
         print("loss:")
@@ -107,7 +107,7 @@ for epoch in range(1):
             print('[%d,%5d] training loss: %.3f'%(epoch+1,i+1,running_loss/20))
             running_loss=0.0
             test_outputs=net(test_data)
-            test_labels_=Tensor(to_one_hot(test_labels)).float().cuda()
+            test_labels_=Tensor(to_one_hot(test_labels)).float() 
             test_loss=criterion(test_outputs,test_labels_)
             print('[%d,%5d] test loss: %.3f'%(epoch+1,i+1,test_loss))
             _,test_predicted=torch.max(test_outputs.data,1)
